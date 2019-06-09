@@ -1,0 +1,230 @@
+--drop database MovieAnalysis
+create database MovieAnalysis  --电影分析数据库
+go
+
+use MovieAnalysis
+ 
+--演员表
+CREATE TABLE m_actors (   
+  m_id char(20) NOT NULL,
+  m_actor char(40) NOT NULL,
+  PRIMARY KEY (m_id,m_actor)
+) ;
+
+--导演表
+CREATE TABLE m_directors(
+  m_id char(20) NOT NULL,
+  m_director char(40) NOT NULL,
+  PRIMARY KEY (m_id,m_director)
+) ;
+
+--电影表
+DROP TABLE m_info
+CREATE TABLE m_info (
+  m_id varchar(20) NOT NULL,
+  m_name varchar(40) DEFAULT NULL,
+  m_release_time FLOAT(4) DEFAULT NULL,
+  m_score float(5) DEFAULT NULL,
+  PRIMARY KEY (m_id)
+) ;
+
+--类型表
+CREATE TABLE m_types (
+  m_id char(20) NOT NULL,
+  m_type char(20) NOT NULL,
+  PRIMARY KEY (m_id,m_type)
+) ;
+
+
+--【1、四个基本表的建立扩充】
+SELECT * FROM m_info
+SELECT [m_actors].m_id, m_actor,m_score FROM m_actors,m_info WHERE [m_info].m_id = [m_actors].m_id
+SELECT [m_directors].m_id, m_director,m_score FROM m_directors,m_info WHERE [m_info].m_id = [m_directors].m_id
+SELECT * FROM m_types
+
+
+
+
+
+--【2、用存储过程展示电影评分及排序】
+
+-- drop proc get_movie_score_78
+CREATE PROC get_movie_score_78		-- 获取评分7-9的信息
+AS
+	SELECT m_id, m_name, m_release_time, m_score
+	FROM m_info
+	WHERE m_score>=8.0 
+	ORDER BY m_score DESC;
+
+	
+	SELECT m_id, m_name, m_release_time, m_score
+	FROM m_info
+	WHERE m_score>=7.0 and m_score<8.0
+	ORDER BY m_score DESC;
+
+EXEC sp_stored_procedures	-- 返回当前环境中的存储过程列表
+
+EXEC sp_helptext 'get_movie_score_78';	-- 显示存储过程的定义信息
+
+EXEC get_movie_score_78;		-- 调用用户自定义的存储过程
+
+
+
+
+
+
+--【3、电影上映时间段和平均分】
+CREATE PROC get_movie_time		-- 获取电影上映信息
+AS
+
+	SELECT AVG(m_score)average  FROM m_info WHERE  m_release_time>='2010';
+	SELECT m_name, m_release_time 
+	FROM m_info WHERE m_release_time>='2010'
+	ORDER BY m_release_time DESC;
+
+	SELECT AVG(m_score) FROM m_info WHERE  m_release_time>='2000'AND m_release_time<='2010';
+	SELECT m_name, m_release_time 
+	FROM m_info WHERE m_release_time>='2000' AND m_release_time<='2010'
+	ORDER BY m_release_time DESC;
+
+	SELECT AVG(m_score) FROM m_info WHERE  m_release_time<'2000'AND m_release_time>= '1990';
+	SELECT m_name, m_release_time 
+	FROM m_info WHERE m_release_time< '2000' AND m_release_time>= '1990'
+	ORDER BY m_release_time DESC;
+	
+	SELECT AVG(m_score) FROM m_info WHERE  m_release_time<'1990'AND m_release_time>= '1980';
+	SELECT m_name, m_release_time 
+	FROM m_info WHERE m_release_time< '1990' AND m_release_time>= '1980'
+	ORDER BY m_release_time DESC;
+
+	SELECT AVG(m_score) FROM m_info WHERE  m_release_time<'1980';
+	SELECT m_name, m_release_time 
+	FROM m_info WHERE m_release_time< '1980'
+	ORDER BY m_release_time DESC;
+
+EXEC sp_stored_procedures	-- 返回当前环境中的存储过程列表
+
+EXEC sp_helptext 'get_movie_time';	-- 显示存储过程的定义信息
+
+EXEC get_movie_time		-- 调用用户自定义的存储过程
+
+
+
+
+
+--【4.视图，方便对平均分进行操作】
+--drop view directors
+create view directors 
+as
+select m_info.m_id,m_director,m_score
+from m_directors,m_info
+where m_info.m_id = m_directors.m_id
+
+
+
+
+USE MovieAnalysis
+GO
+--【5. 创建触发器,更新数据为例】
+CREATE TRIGGER tri_Update ON m_info   --创建触发器
+FOR UPDATE
+AS
+PRINT('更新了电影数据');
+
+--select * from m_info;
+
+UPDATE m_info SET m_score=5.6 WHERE m_info.m_id = '10456963';  --测试触发器
+
+SELECT * FROM sysobjects WHERE xtype = 'TR';   --查看触发器
+
+DROP TRIGGER tri_Update;  --删除触发器
+
+
+--SELECT * FROM m_info
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE PROC get_movie_score_9		-- 获取评分高于9的信息
+AS
+	SELECT m_id, m_name, m_release_time, m_score
+	FROM m_info
+	WHERE m_score>=9.0;
+	--ORDER BY m_score DESC;
+
+EXEC sp_stored_procedures	-- 返回当前环境中的存储过程列表
+
+EXEC sp_helptext 'get_movie_score_9';	-- 显示存储过程的定义信息
+
+EXEC get_movie_score_9;		-- 调用用户自定义的存储过程
+
+
+CREATE PROC get_movie_score_67		-- 获取评分小于6 6-7的信息
+AS
+	SELECT m_id, m_name, m_release_time, m_score
+	FROM m_info
+	WHERE m_score>=6.0 and m_score<7.0
+	ORDER BY m_score DESC;
+	
+	SELECT m_id, m_name, m_release_time, m_score
+	FROM m_info
+	WHERE m_score<6.0
+	ORDER BY m_score DESC;
+
+	SELECT AVG(m_score) FROM m_info ;   --所有电影的平均分
+
+EXEC sp_stored_procedures	-- 返回当前环境中的存储过程列表
+
+EXEC sp_helptext 'get_movie_score_67';	-- 显示存储过程的定义信息
+
+EXEC get_movie_score_67		-- 调用用户自定义的存储过程
+
+
+--【其他项评分/连接】
+
+	SELECT [m_info].m_id, [m_actors].m_actor   --演员评分
+    FROM m_info,m_actors
+    WHERE [MovieAnalysis].[dbo].[m_info].m_id = [MovieAnalysis].[dbo].[m_actors].m_id
+	order by [m_info].m_score DESC;
+
+	SELECT [m_info].m_id, [m_directors].m_director   --导演评分
+    FROM m_info,m_directors
+    WHERE [MovieAnalysis].[dbo].[m_info].m_id = [MovieAnalysis].[dbo].[m_directors].m_id
+	order by [m_info].m_score DESC;
+
+--DELETE FROM m_info where m_release_time='2018'; 
+--DELETE FROM m_info where m_id='26742360';
+
+
+    
+	SELECT AVG(m_score) FROM m_info WHERE  m_release_time<'1980';
+	SELECT m_name, m_release_time 
+	FROM m_info WHERE m_release_time< '1980'
+	ORDER BY m_release_time DESC;
+
+	SELECT [m_info].m_id,[m_info].m_name ,[m_actors].m_actor,[m_info].m_score, m_release_time   --查一个演员
+    FROM m_info,m_actors
+    WHERE [MovieAnalysis].[dbo].[m_info].m_id = [MovieAnalysis].[dbo].[m_actors].m_id and [m_actors].m_actor='朱茵'
+	order by [m_info].m_score DESC;
+
+
+select count(*) from m_actors where m_actor='朱茵'
+
+
+
+
+
